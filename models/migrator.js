@@ -13,7 +13,7 @@ import { ServiceError } from "infra/errors.js";
  */
 const defaultMigrationOptions = {
   dryRun: true,
-  dir: resolve("infra", "migratiosns"),
+  dir: resolve("infra", "migrations"),
   direction: "up",
   verbose: true,
   migrationsTable: "pgmigrations",
