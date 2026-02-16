@@ -13,10 +13,11 @@ async function query(queryInput) {
     const result = await client.query(queryInput);
     return result;
   } catch (error) {
+    console.log("\n Erro dentro do catch do database.js:");
     console.error(error);
     throw error;
   } finally {
-    await client.end();
+    await client?.end();
   }
 }
 
