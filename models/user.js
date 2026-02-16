@@ -2,10 +2,20 @@ import database from "infra/database.js";
 import { NotFoundError, ValidationError } from "infra/errors.js";
 
 /**
+ * @typedef {object} User
+ * @property {string} id
+ * @property {string} username
+ * @property {string} email
+ * @property {string} password
+ * @property {Date} created_at
+ * @property {Date} updated_at
+ */
+
+/**
  * Busca um único usuário pelo username (case-insensitive).
  *
  * @param {string} username - Username a ser buscado.
- * @returns {Promise<object>} Objeto do usuário encontrado.
+ * @returns {Promise<User>} Objeto do usuário encontrado.
  * @throws {NotFoundError} Se nenhum usuário for encontrado com esse username.
  */
 async function findOneByUsername(username) {
@@ -17,7 +27,7 @@ async function findOneByUsername(username) {
    * Executa o SELECT no banco e lança erro se não encontrar resultado.
    *
    * @param {string} username
-   * @returns {Promise<object>} Primeira linha retornada pela query.
+   * @returns {Promise<User>} Primeira linha retornada pela query.
    * @throws {NotFoundError} Se rowCount for 0.
    */
   async function runSelectQuery(username) {
@@ -56,7 +66,7 @@ async function findOneByUsername(username) {
  * @param {string} userInputValues.username
  * @param {string} userInputValues.email
  * @param {string} userInputValues.password
- * @returns {Promise<object>} Objeto do usuário recém-criado (todas as colunas via RETURNING *).
+ * @returns {Promise<User>} Objeto do usuário recém-criado (todas as colunas via RETURNING *).
  * @throws {ValidationError} Email ou username já existem no banco.
  */
 async function create(userInputValues) {
@@ -124,7 +134,7 @@ async function create(userInputValues) {
    * Executa o INSERT no banco e retorna o usuário criado.
    *
    * @param {object} userInputValues
-   * @returns {Promise<object>} Linha inserida retornada pelo RETURNING *.
+   * @returns {Promise<User>} Linha inserida retornada pelo RETURNING *.
    */
   async function runInsertQuery(userInputValues) {
     const results = await database.query({
