@@ -1,5 +1,6 @@
 import retry from "async-retry";
 import database from "infra/database.js";
+import migrator from "models/migrator.js";
 
 /**
  * Aguarda todos os serviços necessários estarem prontos antes de rodar os testes.
@@ -60,9 +61,19 @@ async function clearDatabase() {
   await database.query("drop schema public cascade; create schema public;");
 }
 
+/**
+ * Executa as migrações pendentes no banco de testes.
+ *
+ * @returns {Promise<void>}
+ */
+async function runPendingMigrations() {
+  await migrator.runPendingMigrations();
+}
+
 const orchestrator = {
   waitForAllServices,
   clearDatabase,
+  runPendingMigrations,
 };
 
 export default orchestrator;
