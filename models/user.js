@@ -1,5 +1,50 @@
 import database from "infra/database.js";
-import { ValidationError } from "infra/errors.js";
+import { NotFoundError, ValidationError } from "infra/errors.js";
+
+/**
+ * Busca um único usuário pelo username (case-insensitive).
+ *
+ * @param {string} username - Username a ser buscado.
+ * @returns {Promise<object>} Objeto do usuário encontrado.
+ * @throws {NotFoundError} Se nenhum usuário for encontrado com esse username.
+ */
+async function findOneByUsername(username) {
+  const userFound = await runSelectQuery(username);
+
+  return userFound;
+
+  /**
+   * Executa o SELECT no banco e lança erro se não encontrar resultado.
+   *
+   * @param {string} username
+   * @returns {Promise<object>} Primeira linha retornada pela query.
+   * @throws {NotFoundError} Se rowCount for 0.
+   */
+  async function runSelectQuery(username) {
+    const results = await database.query({
+      text: `
+        SELECT
+          *
+        FROM
+          users
+        WHERE
+          LOWER(username) = LOWER($1)
+        LIMIT
+          1
+        ;`,
+      values: [username],
+    });
+
+    if (results.rowCount === 0) {
+      throw new NotFoundError({
+        message: "O username informado não foi encontrado no sistema.",
+        action: "Verifique se o username está digitado corretamente.",
+      });
+    }
+
+    return results.rows[0];
+  }
+}
 
 /**
  * Cria um novo usuário no banco após validar unicidade de email e username.
@@ -103,6 +148,7 @@ async function create(userInputValues) {
 
 const user = {
   create,
+  findOneByUsername,
 };
 
 export default user;
