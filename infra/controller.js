@@ -1,4 +1,9 @@
-import { InternalServerError, MethodNotAllowedError } from "infra/errors.js";
+import {
+  InternalServerError,
+  MethodNotAllowedError,
+  NotFoundError,
+  ValidationError,
+} from "infra/errors.js";
 
 /**
  * Handler para quando a rota existe mas o método HTTP não é suportado.
@@ -13,14 +18,19 @@ function onNoMatchHandler(request, response) {
 }
 
 /**
- * Handler global de erros. Encapsula qualquer erro não tratado em um
- * `InternalServerError` e responde com o status code apropriado.
+ * Handler global de erros. Se o erro for um `ValidationError` ou `NotFoundError`,
+ * repassa direto com seu status code. Qualquer outro erro é encapsulado em um
+ * `InternalServerError`.
  *
  * @param {Error} error - Erro capturado pelo next-connect.
  * @param {import("http").IncomingMessage} request
  * @param {import("http").ServerResponse} response
  */
 function onErrorHandler(error, request, response) {
+  if (error instanceof ValidationError || error instanceof NotFoundError) {
+    return response.status(error.statusCode).json(error);
+  }
+
   const publicErrorObject = new InternalServerError({
     statusCode: error.statusCode,
     cause: error,
