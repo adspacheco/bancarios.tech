@@ -93,6 +93,39 @@ export class ValidationError extends Error {
 }
 
 /**
+ * Erro para quando o recurso solicitado não foi encontrado no sistema.
+ * Responde com status 404.
+ *
+ * @extends {Error}
+ */
+export class NotFoundError extends Error {
+  /**
+   * @param {object} params
+   * @param {Error} [params.cause] - Erro original que causou a falha.
+   * @param {string} [params.message="Não foi possível encontrar este recurso no sistema."] - Mensagem descritiva do erro.
+   * @param {string} [params.action="Verifique se os parâmetros enviados na consulta estão certos."] - Instrução para o cliente corrigir o problema.
+   */
+  constructor({ cause, message, action }) {
+    super(message || "Não foi possível encontrar este recurso no sistema.", {
+      cause,
+    });
+    this.name = "NotFoundError";
+    this.action =
+      action || "Verifique se os parâmetros enviados na consulta estão certos.";
+    this.statusCode = 404;
+  }
+
+  toJSON() {
+    return {
+      name: this.name,
+      message: this.message,
+      action: this.action,
+      status_code: this.statusCode,
+    };
+  }
+}
+
+/**
  * Erro para quando o cliente usa um método HTTP não suportado pelo endpoint.
  * Responde com status 405.
  *

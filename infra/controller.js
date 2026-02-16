@@ -1,6 +1,7 @@
 import {
   InternalServerError,
   MethodNotAllowedError,
+  NotFoundError,
   ValidationError,
 } from "infra/errors.js";
 
@@ -17,15 +18,16 @@ function onNoMatchHandler(request, response) {
 }
 
 /**
- * Handler global de erros. Se o erro for um `ValidationError`, repassa direto
- * com status 400. Qualquer outro erro é encapsulado em um `InternalServerError`.
+ * Handler global de erros. Se o erro for um `ValidationError` ou `NotFoundError`,
+ * repassa direto com seu status code. Qualquer outro erro é encapsulado em um
+ * `InternalServerError`.
  *
  * @param {Error} error - Erro capturado pelo next-connect.
  * @param {import("http").IncomingMessage} request
  * @param {import("http").ServerResponse} response
  */
 function onErrorHandler(error, request, response) {
-  if (error instanceof ValidationError) {
+  if (error instanceof ValidationError || error instanceof NotFoundError) {
     return response.status(error.statusCode).json(error);
   }
 
