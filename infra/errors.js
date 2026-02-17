@@ -126,6 +126,38 @@ export class NotFoundError extends Error {
 }
 
 /**
+ * Erro para quando o usuário não está autenticado ou as credenciais são inválidas.
+ * Responde com status 401.
+ *
+ * @extends {Error}
+ */
+export class UnauthorizedError extends Error {
+  /**
+   * @param {object} params
+   * @param {Error} [params.cause] - Erro original que causou a falha.
+   * @param {string} [params.message="Usuário não autenticado."] - Mensagem descritiva do erro.
+   * @param {string} [params.action="Faça novamente o login para continuar."] - Instrução para o cliente.
+   */
+  constructor({ cause, message, action }) {
+    super(message || "Usuário não autenticado.", {
+      cause,
+    });
+    this.name = "UnauthorizedError";
+    this.action = action || "Faça novamente o login para continuar.";
+    this.statusCode = 401;
+  }
+
+  toJSON() {
+    return {
+      name: this.name,
+      message: this.message,
+      action: this.action,
+      status_code: this.statusCode,
+    };
+  }
+}
+
+/**
  * Erro para quando o cliente usa um método HTTP não suportado pelo endpoint.
  * Responde com status 405.
  *
