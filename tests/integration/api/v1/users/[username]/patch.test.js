@@ -39,7 +39,7 @@ describe("PATCH /api/v1/users/[username]", () => {
         },
         body: JSON.stringify({
           username: "user1",
-          email: "user1@curso.dev",
+          email: "user1@bancarios.news",
           password: "senha123",
         }),
       });
@@ -53,7 +53,7 @@ describe("PATCH /api/v1/users/[username]", () => {
         },
         body: JSON.stringify({
           username: "user2",
-          email: "user2@curso.dev",
+          email: "user2@bancarios.news",
           password: "senha123",
         }),
       });
@@ -90,7 +90,7 @@ describe("PATCH /api/v1/users/[username]", () => {
         },
         body: JSON.stringify({
           username: "email1",
-          email: "email1@curso.dev",
+          email: "email1@bancarios.news",
           password: "senha123",
         }),
       });
@@ -104,7 +104,7 @@ describe("PATCH /api/v1/users/[username]", () => {
         },
         body: JSON.stringify({
           username: "email2",
-          email: "email2@curso.dev",
+          email: "email2@bancarios.news",
           password: "senha123",
         }),
       });
@@ -119,7 +119,7 @@ describe("PATCH /api/v1/users/[username]", () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            email: "email1@curso.dev",
+            email: "email1@bancarios.news",
           }),
         },
       );
@@ -144,7 +144,7 @@ describe("PATCH /api/v1/users/[username]", () => {
         },
         body: JSON.stringify({
           username: "uniqueUser1",
-          email: "uniqueUser1@curso.dev",
+          email: "uniqueUser1@bancarios.news",
           password: "senha123",
         }),
       });
@@ -171,7 +171,7 @@ describe("PATCH /api/v1/users/[username]", () => {
       expect(responseBody).toEqual({
         id: responseBody.id,
         username: "uniqueUser2",
-        email: "uniqueUser1@curso.dev",
+        email: "uniqueUser1@bancarios.news",
         password: responseBody.password,
         created_at: responseBody.created_at,
         updated_at: responseBody.updated_at,
@@ -192,7 +192,7 @@ describe("PATCH /api/v1/users/[username]", () => {
         },
         body: JSON.stringify({
           username: "uniqueEmail1",
-          email: "uniqueEmail1@curso.dev",
+          email: "uniqueEmail1@bancarios.news",
           password: "senha123",
         }),
       });
@@ -207,7 +207,7 @@ describe("PATCH /api/v1/users/[username]", () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            email: "uniqueEmail2@curso.dev",
+            email: "uniqueEmail2@bancarios.news",
           }),
         },
       );
@@ -219,7 +219,7 @@ describe("PATCH /api/v1/users/[username]", () => {
       expect(responseBody).toEqual({
         id: responseBody.id,
         username: "uniqueEmail1",
-        email: "uniqueEmail2@curso.dev",
+        email: "uniqueEmail2@bancarios.news",
         password: responseBody.password,
         created_at: responseBody.created_at,
         updated_at: responseBody.updated_at,
@@ -240,7 +240,7 @@ describe("PATCH /api/v1/users/[username]", () => {
         },
         body: JSON.stringify({
           username: "newPassword1",
-          email: "newPassword1@curso.dev",
+          email: "newPassword1@bancarios.news",
           password: "newPassword1",
         }),
       });
@@ -267,7 +267,7 @@ describe("PATCH /api/v1/users/[username]", () => {
       expect(responseBody).toEqual({
         id: responseBody.id,
         username: "newPassword1",
-        email: "newPassword1@curso.dev",
+        email: "newPassword1@bancarios.news",
         password: responseBody.password,
         created_at: responseBody.created_at,
         updated_at: responseBody.updated_at,
