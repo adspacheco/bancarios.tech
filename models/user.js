@@ -58,6 +58,51 @@ async function findOneByUsername(username) {
 }
 
 /**
+ * Busca um único usuário pelo email (case-insensitive).
+ *
+ * @param {string} email - Email a ser buscado.
+ * @returns {Promise<User>} Objeto do usuário encontrado.
+ * @throws {NotFoundError} Se nenhum usuário for encontrado com esse email.
+ */
+async function findOneByEmail(email) {
+  const userFound = await runSelectQuery(email);
+
+  return userFound;
+
+  /**
+   * Executa o SELECT no banco e lança erro se não encontrar resultado.
+   *
+   * @param {string} email
+   * @returns {Promise<User>} Primeira linha retornada pela query.
+   * @throws {NotFoundError} Se rowCount for 0.
+   */
+  async function runSelectQuery(email) {
+    const results = await database.query({
+      text: `
+        SELECT
+          *
+        FROM
+          users
+        WHERE
+          LOWER(email) = LOWER($1)
+        LIMIT
+          1
+        ;`,
+      values: [email],
+    });
+
+    if (results.rowCount === 0) {
+      throw new NotFoundError({
+        message: "O email informado não foi encontrado no sistema.",
+        action: "Verifique se o email está digitado corretamente.",
+      });
+    }
+
+    return results.rows[0];
+  }
+}
+
+/**
  * Cria um novo usuário no banco após validar unicidade de email e username.
  *
  * As validações são feitas antes do INSERT para retornar mensagens
@@ -239,6 +284,7 @@ async function hashPasswordInObject(userInputValues) {
 const user = {
   create,
   findOneByUsername,
+  findOneByEmail,
   update,
 };
 

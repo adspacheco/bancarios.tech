@@ -12,15 +12,11 @@ Content-Type: application/json
     "password": "senha"
 }
 
-### Get user
-GET {{baseUrl}}/users/ADSpacheco2
-
-### Update user
-PATCH {{baseUrl}}/users/adspacheCO2
+### Create session
+POST {{baseUrl}}/sessions
 Content-Type: application/json
 
 {
-    "username": "adspacheco3",
-    "email": "adspacheco3@bancarios.news",
-    "password": "senha3"
+    "email": "adspacheco2@bancarios.news",
+    "password": "senha"
 }
