@@ -8,6 +8,7 @@
 // - Cada função pública delega a query SQL para uma função aninhada
 //   (runSelectQuery, runInsertQuery), separando lógica de negócio do SQL.
 // - Todas as queries usam parâmetros ($1, $2) para evitar SQL injection.
+import user from "models/user.js";
 import email from "infra/email.js";
 import database from "infra/database.js";
 import webserver from "infra/webserver.js";
@@ -121,6 +122,65 @@ async function create(userId) {
 }
 
 /**
+ * Marca um token de ativação como utilizado.
+ *
+ * Atualiza os campos `used_at` e `updated_at` com o timestamp UTC atual,
+ * impedindo que o token seja reutilizado.
+ *
+ * @param {string} activationTokenId - UUID do token a ser marcado como usado.
+ * @returns {Promise<ActivationToken>} Objeto do token atualizado com `used_at` preenchido.
+ *
+ * @example
+ * const usedToken = await activation.markTokenAsUsed("uuid-do-token");
+ */
+async function markTokenAsUsed(activationTokenId) {
+  const usedActivationToken = await runUpdateQuery(activationTokenId);
+  return usedActivationToken;
+
+  /**
+   * Executa o UPDATE no banco e retorna o token atualizado.
+   *
+   * @param {string} activationTokenId
+   * @returns {Promise<ActivationToken>} Linha atualizada retornada pelo RETURNING *.
+   */
+  async function runUpdateQuery(activationTokenId) {
+    const results = await database.query({
+      text: `
+       UPDATE
+         user_activation_tokens
+       SET
+         used_at = timezone('utc', now()),
+         updated_at = timezone('utc', now())
+       WHERE
+         id = $1
+       RETURNING
+         *
+     `,
+      values: [activationTokenId],
+    });
+
+    return results.rows[0];
+  }
+}
+
+/**
+ * Ativa a conta de um usuário, concedendo a permissão de criar sessão.
+ *
+ * Substitui as features do usuário por `["create:session"]`,
+ * permitindo que ele faça login no sistema.
+ *
+ * @param {string} userId - UUID do usuário a ser ativado.
+ * @returns {Promise<import("models/user.js").User>} Objeto do usuário com as features atualizadas.
+ *
+ * @example
+ * const activatedUser = await activation.activateUserByUserId("uuid-do-usuario");
+ */
+async function activateUserByUserId(userId) {
+  const activatedUser = await user.setFeatures(userId, ["create:session"]);
+  return activatedUser;
+}
+
+/**
  * Envia o email de ativação de conta para o usuário.
  *
  * O email contém um link com o token de ativação que direciona
@@ -151,6 +211,8 @@ Equipe BancáriosNews`,
 const activation = {
   findOneValidById,
   create,
+  markTokenAsUsed,
+  activateUserByUserId,
   sendEmailToUser,
 };
 

@@ -1,7 +1,7 @@
 // CRUD de usuários e validações de negócio.
 //
 // Padrões usados neste módulo:
-// - Cada função pública (create, findOne*, update) delega a query SQL
+// - Cada função pública (create, findOne*, update, setFeatures) delega a query SQL
 //   para uma função aninhada (runSelectQuery, runInsertQuery, etc.),
 //   separando a lógica de negócio da execução do SQL.
 // - Todas as queries usam parâmetros ($1, $2) para evitar SQL injection.
@@ -376,12 +376,57 @@ async function hashPasswordInObject(userInputValues) {
   userInputValues.password = hashedPassword;
 }
 
+/**
+ * Substitui as features (permissões) de um usuário.
+ *
+ * Sobrescreve o array de features existente com o novo array informado
+ * e atualiza o `updated_at` com o timestamp UTC atual.
+ *
+ * @param {string} userId - UUID do usuário a ser atualizado.
+ * @param {string[]} features - Novo array de permissões (ex: ["create:session"]).
+ * @returns {Promise<User>} Objeto do usuário com as features atualizadas.
+ *
+ * @example
+ * const updated = await user.setFeatures("uuid-do-usuario", ["create:session"]);
+ */
+async function setFeatures(userId, features) {
+  const updatedUser = await runUpdateQuery(userId, features);
+  return updatedUser;
+
+  /**
+   * Executa o UPDATE no banco e retorna o usuário atualizado.
+   *
+   * @param {string} userId
+   * @param {string[]} features
+   * @returns {Promise<User>} Linha atualizada retornada pelo RETURNING *.
+   */
+  async function runUpdateQuery(userId, features) {
+    const results = await database.query({
+      text: `
+       UPDATE
+         users
+       SET
+         features = $2,
+         updated_at = timezone('utc', now())
+       WHERE
+         id = $1
+       RETURNING
+         *
+       ;`,
+      values: [userId, features],
+    });
+
+    return results.rows[0];
+  }
+}
+
 const user = {
   create,
   findOneById,
   findOneByUsername,
   findOneByEmail,
   update,
+  setFeatures,
 };
 
 export default user;
