@@ -165,13 +165,13 @@ async function markTokenAsUsed(activationTokenId) {
 }
 
 /**
- * Ativa a conta de um usuário, concedendo as permissões de sessão.
+ * Ativa a conta de um usuário, concedendo as permissões padrão.
  *
  * Antes de ativar, verifica se o usuário ainda possui a feature
  * `"read:activation_token"` (usuários já ativados perdem essa feature,
  * impedindo reativação). Substitui as features do usuário por
- * `["create:session", "read:session"]`, permitindo que ele faça login
- * e consulte seus dados no sistema.
+ * `["create:session", "read:session", "update:user"]`, permitindo que
+ * ele faça login, consulte seus dados e atualize seu próprio perfil.
  *
  * @param {string} userId - UUID do usuário a ser ativado.
  * @returns {Promise<import("models/user.js").User>} Objeto do usuário com as features atualizadas.
@@ -193,6 +193,7 @@ async function activateUserByUserId(userId) {
   const activatedUser = await user.setFeatures(userId, [
     "create:session",
     "read:session",
+    "update:user",
   ]);
   return activatedUser;
 }
