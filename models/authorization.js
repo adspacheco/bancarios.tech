@@ -8,6 +8,11 @@
 // o usuário só pode atualizar o próprio perfil — a menos que possua a
 // feature "update:user:others", que permite atuar sobre qualquer usuário.
 //
+// O módulo também é responsável por filtrar os dados de saída (filterOutput),
+// garantindo que cada endpoint retorne apenas os campos que o usuário tem
+// permissão de visualizar, evitando vazamento de dados sensíveis como
+// password e email (exceto para o próprio usuário).
+//
 // Ter essa lógica isolada permite evoluir o modelo de permissões sem alterar
 // os consumidores (controller.canRequest, rotas da API, etc.).
 
@@ -55,8 +60,119 @@ function can(user, feature, resource) {
   return authorized;
 }
 
+/**
+ * Filtra os campos de saída de um recurso com base na feature informada,
+ * retornando apenas os dados que o usuário tem permissão de visualizar.
+ *
+ * Cada feature possui uma whitelist de campos permitidos. Para features
+ * sensíveis a ownership (ex: "read:user:self", "read:session"), o `user.id`
+ * é comparado com o ID do recurso para liberar campos adicionais como `email`.
+ *
+ * Para "read:status", se o usuário possuir "read:status:all", o campo
+ * `version` do banco de dados é incluído na saída.
+ *
+ * @param {object} user - Objeto do usuário (autenticado ou anônimo) com a lista de features.
+ * @param {string[]} user.features - Lista de features que o usuário possui.
+ * @param {string} user.id - Identificador único do usuário.
+ * @param {string} feature - Feature de leitura que define quais campos retornar
+ *   (ex: "read:user", "read:user:self", "read:session", "read:activation_token",
+ *   "read:migration", "read:status").
+ * @param {object|object[]} resource - Recurso ou lista de recursos a ser filtrado.
+ * @returns {object|object[]} Objeto (ou array) contendo apenas os campos permitidos.
+ *
+ * @example
+ * // Retorna apenas id, username, features, created_at, updated_at
+ * authorization.filterOutput(user, "read:user", targetUser);
+ *
+ * @example
+ * // Retorna campos públicos + email quando user.id === resource.id
+ * authorization.filterOutput(user, "read:user:self", user);
+ *
+ * @example
+ * // Filtra lista de migrations para retornar apenas path, name, timestamp
+ * authorization.filterOutput(user, "read:migration", pendingMigrations);
+ */
+function filterOutput(user, feature, resource) {
+  if (feature === "read:user") {
+    return {
+      id: resource.id,
+      username: resource.username,
+      features: resource.features,
+      created_at: resource.created_at,
+      updated_at: resource.updated_at,
+    };
+  }
+
+  if (feature === "read:user:self") {
+    if (user.id === resource.id) {
+      return {
+        id: resource.id,
+        username: resource.username,
+        email: resource.email,
+        features: resource.features,
+        created_at: resource.created_at,
+        updated_at: resource.updated_at,
+      };
+    }
+  }
+
+  if (feature === "read:session") {
+    if (user.id === resource.user_id) {
+      return {
+        id: resource.id,
+        token: resource.token,
+        user_id: resource.user_id,
+        created_at: resource.created_at,
+        updated_at: resource.updated_at,
+        expires_at: resource.expires_at,
+      };
+    }
+  }
+
+  if (feature === "read:activation_token") {
+    return {
+      id: resource.id,
+      user_id: resource.user_id,
+      created_at: resource.created_at,
+      updated_at: resource.updated_at,
+      expires_at: resource.expires_at,
+      used_at: resource.used_at,
+    };
+  }
+
+  if (feature === "read:migration") {
+    return resource.map((migration) => {
+      return {
+        path: migration.path,
+        name: migration.name,
+        timestamp: migration.timestamp,
+      };
+    });
+  }
+
+  if (feature === "read:status") {
+    const output = {
+      updated_at: resource.updated_at,
+      dependencies: {
+        database: {
+          max_connections: resource.dependencies.database.max_connections,
+          opened_connections: resource.dependencies.database.opened_connections,
+        },
+      },
+    };
+
+    if (can(user, "read:status:all")) {
+      output.dependencies.database.version =
+        resource.dependencies.database.version;
+    }
+
+    return output;
+  }
+}
+
 const authorization = {
   can,
+  filterOutput,
 };
 
 export default authorization;
