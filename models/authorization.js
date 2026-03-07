@@ -15,6 +15,37 @@
 //
 // Ter essa lógica isolada permite evoluir o modelo de permissões sem alterar
 // os consumidores (controller.canRequest, rotas da API, etc.).
+import { InternalServerError } from "infra/errors.js";
+
+/**
+ * Lista de todas as features reconhecidas pelo sistema de autorização.
+ * Qualquer feature não listada aqui será rejeitada por `validateFeature`.
+ *
+ * @type {string[]}
+ */
+const availableFeatures = [
+  // USER
+  "create:user",
+  "read:user",
+  "read:user:self",
+  "update:user",
+  "update:user:others",
+
+  // SESSION
+  "create:session",
+  "read:session",
+
+  // ACTIVATION_TOKEN
+  "read:activation_token",
+
+  // MIGRATION
+  "create:migration",
+  "read:migration",
+
+  // STATUS
+  "read:status",
+  "read:status:all",
+];
 
 /**
  * Verifica se o usuário possui a feature necessária para executar uma ação,
@@ -30,6 +61,8 @@
  *   a menos que possua "update:user:others", que ignora a verificação de ownership.
  * @param {string} resource.id - Identificador único do recurso-alvo.
  * @returns {boolean} `true` se o usuário está autorizado, `false` caso contrário.
+ * @throws {InternalServerError} Se `user` não possuir a propriedade `features`.
+ * @throws {InternalServerError} Se `feature` não estiver listada em `availableFeatures`.
  *
  * @example
  * authorization.can(request.context.user, "create:session"); // true ou false
@@ -43,6 +76,9 @@
  * authorization.can(privilegedUser, "update:user", anyUser); // true
  */
 function can(user, feature, resource) {
+  validateUser(user);
+  validateFeature(feature);
+
   let authorized = false;
 
   if (user.features.includes(feature)) {
@@ -79,6 +115,9 @@ function can(user, feature, resource) {
  *   "read:migration", "read:status").
  * @param {object|object[]} resource - Recurso ou lista de recursos a ser filtrado.
  * @returns {object|object[]} Objeto (ou array) contendo apenas os campos permitidos.
+ * @throws {InternalServerError} Se `user` não possuir a propriedade `features`.
+ * @throws {InternalServerError} Se `feature` não estiver listada em `availableFeatures`.
+ * @throws {InternalServerError} Se `resource` não for fornecido.
  *
  * @example
  * // Retorna apenas id, username, features, created_at, updated_at
@@ -93,6 +132,10 @@ function can(user, feature, resource) {
  * authorization.filterOutput(user, "read:migration", pendingMigrations);
  */
 function filterOutput(user, feature, resource) {
+  validateUser(user);
+  validateFeature(feature);
+  validateResource(resource);
+
   if (feature === "read:user") {
     return {
       id: resource.id,
@@ -167,6 +210,50 @@ function filterOutput(user, feature, resource) {
     }
 
     return output;
+  }
+}
+
+/**
+ * Valida se o objeto `user` é válido e possui a propriedade `features`.
+ *
+ * @param {object} user - Objeto do usuário a ser validado.
+ * @throws {InternalServerError} Se `user` for falsy ou não possuir `features`.
+ */
+function validateUser(user) {
+  if (!user || !user.features) {
+    throw new InternalServerError({
+      cause: "É necessário fornecer `user` no model `authorization`.",
+    });
+  }
+}
+
+/**
+ * Valida se a `feature` informada está listada em `availableFeatures`.
+ *
+ * @param {string} feature - Nome da feature a ser validada.
+ * @throws {InternalServerError} Se `feature` for falsy ou não existir em `availableFeatures`.
+ */
+function validateFeature(feature) {
+  if (!feature || !availableFeatures.includes(feature)) {
+    throw new InternalServerError({
+      cause:
+        "É necessário fornecer uma `feature` conhecida no model `authorization`.",
+    });
+  }
+}
+
+/**
+ * Valida se o `resource` foi fornecido.
+ *
+ * @param {object|object[]} resource - Recurso a ser validado.
+ * @throws {InternalServerError} Se `resource` for falsy.
+ */
+function validateResource(resource) {
+  if (!resource) {
+    throw new InternalServerError({
+      cause:
+        "É necessário fornecer um `resource` em `authorization.filterOutput()`.",
+    });
   }
 }
 
