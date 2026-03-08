@@ -71,8 +71,10 @@ export class InternalServerError extends Error {
  *
  * @example
  * throw new ServiceError({
- *   message: "Erro na conexão com Banco ou na Query.",
+ *   message: "Não foi possível enviar o email.",
+ *   action: "Verifique se o serviço de email está disponível.",
  *   cause: originalError,
+ *   context: { to: "user@email.com", subject: "Ativação" },
  * });
  */
 export class ServiceError extends Error {
@@ -80,23 +82,32 @@ export class ServiceError extends Error {
    * @param {object} params
    * @param {Error} [params.cause] - Erro original vindo do serviço.
    * @param {string} [params.message="Serviço indisponível no momento."] - Mensagem descritiva do erro.
+   * @param {string} [params.action="Verifique se o serviço está disponível."] - Instrução para o cliente corrigir o problema.
+   * @param {object} [params.context] - Dados de contexto para debugging (ex: parâmetros da operação que falhou).
    */
-  constructor({ cause, message }) {
+  constructor({ cause, message, action, context }) {
     super(message || "Serviço indisponível no momento.", {
       cause,
     });
     this.name = "ServiceError";
-    this.action = "Verifique se o serviço está disponível.";
+    this.action = action || "Verifique se o serviço está disponível.";
     this.statusCode = 503;
+    this.context = context;
   }
 
-  /** @see InternalServerError.prototype.toJSON */
+  /**
+   * Converte o erro em objeto para resposta da API.
+   * Inclui `context` quando presente para facilitar debugging.
+   *
+   * @returns {{ name: string, message: string, action: string, status_code: number, context?: object }}
+   */
   toJSON() {
     return {
       name: this.name,
       message: this.message,
       action: this.action,
       status_code: this.statusCode,
+      context: this.context,
     };
   }
 }
